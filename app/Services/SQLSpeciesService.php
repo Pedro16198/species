@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\SpeciesServiceInterface;
+use App\Exceptions\SpeciesAlreadyExistsException;
 use Illuminate\Support\Facades\DB;
 
 class SQLSpeciesService implements SpeciesServiceInterface
@@ -26,6 +27,14 @@ class SQLSpeciesService implements SpeciesServiceInterface
 
     public function create(array $data): array
     {
+        $exists = DB::table('species')
+            ->where('name', $data['name'])
+            ->exists();
+
+        if ($exists) {
+            throw SpeciesAlreadyExistsException::forName($data['name']);
+        }
+
         $id = DB::table('species')->insertGetId([
             'name' => $data['name'],
         ]);
@@ -35,6 +44,15 @@ class SQLSpeciesService implements SpeciesServiceInterface
 
     public function update(int|string $id, array $data): ?array
     {
+        $exists = DB::table('species')
+            ->where('name', $data['name'])
+            ->where('id', '<>', $id)
+            ->exists();
+
+        if ($exists) {
+            throw SpeciesAlreadyExistsException::forName($data['name']);
+        }
+
         $updated = DB::table('species')
             ->where('id', $id)
             ->update([
